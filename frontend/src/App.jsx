@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8010";
@@ -13,7 +13,11 @@ function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [showEnhanceTip, setShowEnhanceTip] = useState(false);
   const [enhanceTipShown, setEnhanceTipShown] = useState(false);
+  const [showPdfSummary, setShowPdfSummary] = useState(false);
+  const [pdfSummaryText, setPdfSummaryText] = useState("");
+  const [pdfFileName, setPdfFileName] = useState("");
   const [theme, setTheme] = useState(() => localStorage.getItem("promptify-theme") || "dark");
+  const pdfInputRef = useRef(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -86,6 +90,34 @@ function App() {
           content: "Error: unable to fetch response from server.",
         },
       ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSummarizePdf = async (file) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/summarize-pdf`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.detail || "Could not summarize PDF.");
+      }
+      setPdfFileName(file.name);
+      setPdfSummaryText(data.summary || "No summary returned.");
+      setShowPdfSummary(true);
+    } catch (error) {
+      setPdfFileName(file.name || "PDF");
+      setPdfSummaryText(`Error: ${error.message}`);
+      setShowPdfSummary(true);
     } finally {
       setLoading(false);
     }
@@ -182,6 +214,19 @@ function App() {
         </div>
       )}
 
+      {showPdfSummary && (
+        <div className="modal-backdrop" onClick={() => setShowPdfSummary(false)}>
+          <div className="contact-modal pdf-summary-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>PDF Summary</h3>
+            <p className="pdf-summary-file">{pdfFileName}</p>
+            <div className="pdf-summary-content">{pdfSummaryText}</div>
+            <button className="close-btn" onClick={() => setShowPdfSummary(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {showIntro ? (
         <div className="intro-text-wrap">
           <h1 className="intro-title">Promptify</h1>
@@ -210,6 +255,20 @@ function App() {
           )}
 
           <section className="composer-surface">
+            <input
+              ref={pdfInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden-file-input"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                if (file) {
+                  handleSummarizePdf(file);
+                }
+                e.target.value = "";
+              }}
+            />
+
             <textarea
               rows={4}
               value={inputText}
@@ -220,6 +279,12 @@ function App() {
             <div className="buttons">
               <button onClick={handleEnhance} disabled={loading || !inputText.trim()}>
                 Enhance Prompt
+              </button>
+              <button
+                onClick={() => pdfInputRef.current?.click()}
+                disabled={loading}
+              >
+                PDF Summarizer
               </button>
               <button
                 className="send"

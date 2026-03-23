@@ -324,6 +324,31 @@ a {
   padding: 14px;
 }
 
+.hidden-file-input {
+  display: none;
+}
+
+.pdf-summary-modal {
+  width: min(720px, 94vw);
+}
+
+.pdf-summary-file {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.pdf-summary-content {
+  max-height: 55vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  padding: 12px;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
 textarea {
   width: 100%;
   min-height: 120px;

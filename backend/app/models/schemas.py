@@ -11,3 +11,7 @@ class EnhanceResponse(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
+
+
+class PdfSummaryResponse(BaseModel):
+    summary: str
